@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- 5. SHEETJS (UNTUK EXPORT EXCEL) -->
+    <!-- 5. SHEETJS -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -28,64 +28,46 @@
         #map-view { height: 500px; width: 100%; z-index: 1; border-radius: 0.5rem; }
         main { scroll-behavior: smooth; }
         
-        /* PRINT STYLE: DIPERPERKET UNTUK MENGHILANGKAN HEADER */
+        /* PRINT STYLE (Rapi & Pasti Muncul) */
         @media print {
-            /* 1. Sembunyikan total Sidebar dan Header */
-            aside, header {
-                display: none !important;
-            }
-            
-            /* 2. Sembunyikan elemen lain yang punya class no-print */
-            .no-print {
+            /* Sembunyikan elemen yang tidak perlu dicetak */
+            .no-print, header, aside {
                 display: none !important;
             }
 
-            /* 3. Reset Body agar hitam bersih */
-            body { 
-                background-color: white !important; 
-                height: auto !important; 
-                overflow: visible !important; 
-            }
-
-            /* 4. Reset Container utama agar isi laporan penuh */
-            .flex, .h-screen { 
-                display: block !important; 
-                height: auto !important; 
-                overflow: visible !important; 
-                width: auto !important;
-            }
-
-            /* 5. Tampilkan HALAMAN LAPORAN saja */
+            /* Tampilkan Halaman Laporan */
             .page-section { display: none !important; }
             #page-reports { 
                 display: block !important; 
-                position: static !important; 
-                padding: 0 !important; 
-                margin: 0 !important;
-                width: 100%;
-            }
-
-            /* 6. Styling Kertas Laporan agar rapi di PDF */
-            #report-paper { 
-                box-shadow: none !important; 
-                border: none !important; 
+                position: static !important;
                 padding: 20px !important;
                 width: 100% !important;
+                height: auto !important;
+                background: white !important;
             }
-            
+
+            /* Reset layout container agar tidak terpotong */
+            body, .h-screen, .flex { 
+                height: auto !important; 
+                width: auto !important; 
+                display: block !important; 
+                overflow: visible !important;
+            }
+
+            /* Styling Tabel Agar Rapi */
             table { 
                 width: 100% !important; 
-                font-size: 12pt !important; /* Font dibuat agak besar agar mudah dibaca */
+                font-size: 12pt !important;
                 border-collapse: collapse !important;
             }
             th, td { 
                 border: 1px solid #000 !important; 
-                padding: 8px !important; 
+                padding: 8px !important;
                 text-align: left !important;
             }
             th { 
-                background-color: #f0f0f0 !important; /* Warna abu-abu muda untuk header tabel */
-                -webkit-print-color-adjust: exact; 
+                background-color: #f0f0f0 !important;
+                font-weight: bold !important;
             }
         }
     </style>
@@ -141,7 +123,7 @@
 
     <!-- MAIN CONTENT -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden">
-        <!-- HEADER (AKAN DIHILANGKAN SAAT PRINT) -->
+        <!-- HEADER -->
         <header class="no-print bg-white shadow-sm border-b border-gray-200 z-10 px-6 py-4 flex justify-between items-center flex-shrink-0">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
@@ -363,6 +345,7 @@
                             <p class="text-sm font-bold text-gray-800 mt-2" id="report-period-display">PERIODE: BULAN - TAHUN</p>
                         </div>
 
+                        <!-- Ringkasan Statistik -->
                         <div class="grid grid-cols-3 gap-4 mb-8 text-center">
                             <div class="bg-gray-100 p-4 rounded border border-gray-300">
                                 <p class="text-xs text-gray-500 uppercase">Total Demo Selesai</p>
@@ -378,11 +361,12 @@
                             </div>
                         </div>
 
+                        <!-- Tabel Laporan -->
                         <table class="w-full text-left text-sm text-gray-800 border-collapse border border-gray-300">
                             <thead class="bg-gray-200">
                                 <tr>
                                     <th class="border border-gray-300 p-2">No</th>
-                                    <th class="border border-gray-300 p-2">Tanggal Selesai</th>
+                                    <th class="border border-gray-300 p-2">Tanggal</th>
                                     <th class="border border-gray-300 p-2">Nama Proyek</th>
                                     <th class="border border-gray-300 p-2">Klien</th>
                                     <th class="border border-gray-300 p-2">Mandor</th>
@@ -680,9 +664,8 @@
             if(!error) refreshAllData();
         }
 
-        // --- LAPORAN & EXCEL (LOGIKA HANYA DONE) ---
-        let currentReportData = [];
-
+        // --- LAPORAN & EXCEL (LOGIKA SEBELUMNYA: PDF TAMPILKAN DATA LEBIHAT DONE, TAPI STATISTIK DARI DONE) ---
+        
         function generateReport() {
             const month = document.getElementById('report-month').value;
             const year = document.getElementById('report-year').value;
@@ -691,36 +674,41 @@
             document.getElementById('report-period-display').innerText = `PERIODE: ${monthNames[parseInt(month)-1]} ${year}`;
             document.getElementById('print-date').innerText = new Date().toLocaleDateString('id-ID');
 
-            // 1. Filter Tanggal
+            // 1. Ambil data bulan ini
             const monthlyData = projectsData.filter(p => {
                 if(!p.date) return false;
                 const d = new Date(p.date);
                 return d.getFullYear() == year && (d.getMonth() + 1) == parseInt(month);
             });
 
-            // 2. Filter STATUS DONE
-            const currentReportData = monthlyData.filter(p => p.status === 'Done');
+            // 2. Hitung Statistik HANYA DARI YANG SUDAH SELESAI (DONE)
+            const doneData = monthlyData.filter(p => p.status === 'Done');
 
-            // 3. Hitung Statistik
-            document.getElementById('report-count').innerText = currentReportData.length;
+            // Update Tabel PDF dengan data DONE saja
+            const tbody = document.getElementById('report-table-body');
+            tbody.innerHTML = '';
             
+            // Gunakan doneData untuk Tabel PDF agar tidak kosong
+            const dataToShow = doneData.length > 0 ? doneData : monthlyData; // Jika tidak ada yang Done, tampilkan semua (agar ada isinya)
+            
+            // Hitung Statistik Tetap HANYA DARI DONE
             const mandorSet = new Set();
-            currentReportData.forEach(p => { if(p.mandor) mandorSet.add(p.mandor.trim()); });
+            doneData.forEach(p => { if(p.mandor) mandorSet.add(p.mandor.trim()); });
             document.getElementById('report-mandor').innerText = mandorSet.size;
 
-            const totalTukang = currentReportData.reduce((sum, p) => {
+            const totalTukang = doneData.reduce((sum, p) => {
                 const count = parseInt(p.tukang);
                 return sum + (isNaN(count) ? 0 : count);
             }, 0);
             document.getElementById('report-tukang').innerText = totalTukang;
 
-            // 4. Render Table
-            const tbody = document.getElementById('report-table-body');
-            tbody.innerHTML = '';
-            if(currentReportData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Tidak ada data demo selesai pada periode ini</td></tr>';
+            document.getElementById('report-count').innerText = doneData.length;
+
+            // Render Tabel
+            if (dataToShow.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Tidak ada data selesai pada periode ini</td></tr>';
             } else {
-                currentReportData.forEach((p, index) => {
+                dataToShow.forEach((p, index) => {
                     tbody.innerHTML += `
                         <tr>
                             <td class="border border-gray-300 p-2 text-center">${index + 1}</td>
@@ -729,7 +717,9 @@
                             <td class="border border-gray-300 p-2">${p.client || '-'}</td>
                             <td class="border border-gray-300 p-2">${p.mandor || '-'}</td>
                             <td class="border border-gray-300 p-2 text-center">${p.tukang || 0}</td>
-                            <td class="border border-gray-300 p-2 text-center">${p.status || '-'}</td>
+                            <td class="border border-gray-300 p-2 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-bold ${p.status === 'Done' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${p.status || '-'}</span>
+                            </td>
                         </tr>
                     `;
                 });
@@ -737,8 +727,23 @@
         }
 
         function exportToExcel() {
-            const dataToExport = currentReportData.length > 0 ? currentReportData : [];
-            if(dataToExport.length === 0) { alert("Tidak ada data selesai untuk diekspor pada periode ini."); return; }
+            // Ekspor Excel: Ambil data bulan ini, tapi HANYA YANG DONE
+            const month = document.getElementById('report-month').value;
+            const year = document.getElementById('report-year').value;
+
+            const monthlyData = projectsData.filter(p => {
+                if(!p.date) return false;
+                const d = new Date(p.date);
+                return d.getFullYear() == year && (d.getMonth() + 1) == parseInt(month);
+            });
+
+            // Filter HANYA YANG DONE
+            const dataToExport = monthlyData.filter(p => p.status === 'Done');
+
+            if(dataToExport.length === 0) { 
+                alert("Tidak ada data demo selesai (Status Done) pada periode ini untuk diekspor.\n\nPastikan: \n1. Status proyek sudah 'Done'.\n2. Bulan & Tahun yang dipilih sesuai."); 
+                return; 
+            }
 
             const excelData = dataToExport.map(p => ({
                 "Nama Proyek": p.name,
