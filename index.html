@@ -28,25 +28,37 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased h-screen overflow-hidden flex">
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col hidden md:flex">
+    <!-- SIDEBAR (LOGIKA MOBILE DIUBAH) -->
+    <!-- 
+       Class baru: 
+       - transform -translate-x-full : Sembunyikan ke kiri (di HP)
+       - md:relative md:translate-x-0 : Muncul normal (di Laptop)
+       - transition-transform : Efek animasi halus
+    -->
+    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl md:shadow-none">
         
-        <div class="p-6 text-xl font-bold border-b border-slate-700 flex items-center gap-2">
-            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-            TDCC
+        <div class="p-6 text-xl font-bold border-b border-slate-700 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                TDCC
+            </div>
+            <!-- Tombol Close Hanya di HP -->
+            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
         
         <nav class="mt-6 flex-1 overflow-y-auto sidebar-scroll px-3 space-y-1">
-            <a href="#" onclick="showPage('dashboard')" id="menu-dashboard" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg active-menu">Dashboard</a>
-            <a href="#" onclick="showPage('leads')" id="menu-leads" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Leads</a>
-            <a href="#" onclick="showPage('schedule')" id="menu-schedule" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Jadwal Proyek</a>
-            <a href="#" onclick="showPage('done')" id="menu-done" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Done</a>
+            <a href="#" onclick="closeSidebarMobile(); showPage('dashboard')" id="menu-dashboard" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg active-menu">Dashboard</a>
+            <a href="#" onclick="closeSidebarMobile(); showPage('leads')" id="menu-leads" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Leads</a>
+            <a href="#" onclick="closeSidebarMobile(); showPage('schedule')" id="menu-schedule" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Jadwal Proyek</a>
+            <a href="#" onclick="closeSidebarMobile(); showPage('done')" id="menu-done" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Done</a>
             
             <div class="border-t border-slate-700 my-2"></div>
             
-            <a href="#" onclick="resetForm(); showPage('input')" id="menu-input" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Input Baru</a>
-            <a href="#" onclick="showPage('calendar')" id="menu-calendar" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Kalender</a>
-            <a href="#" onclick="showPage('map')" id="menu-map" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Peta Lokasi</a>
+            <a href="#" onclick="closeSidebarMobile(); resetForm(); showPage('input')" id="menu-input" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Input Baru</a>
+            <a href="#" onclick="closeSidebarMobile(); showPage('calendar')" id="menu-calendar" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Kalender</a>
+            <a href="#" onclick="closeSidebarMobile(); showPage('map')" id="menu-map" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Peta Lokasi</a>
         </nav>
 
         <div class="p-4 border-t border-slate-700 flex items-center gap-3">
@@ -61,13 +73,24 @@
         </div>
     </aside>
 
+    <!-- OVERLAY (LAYAR HITAM DI BELAKANG SAAT MENU BUKA DI HP) -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
+
     <!-- MAIN CONTENT -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden">
         <header class="bg-white shadow-sm border-b border-gray-200 z-10 px-6 py-4 flex justify-between items-center flex-shrink-0">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800" id="page-title">Technical Demo Command Center</h1>
-                <p class="text-xs text-gray-500">Manajemen Jadwal Demo Proyek</p>
+            <div class="flex items-center gap-4">
+                <!-- TOMBOL HAMBURGER MENU (HANYA MUNCUL DI HP) -->
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800" id="page-title">Technical Demo Command Center</h1>
+                    <p class="text-xs text-gray-500">Manajemen Jadwal Demo Proyek</p>
+                </div>
             </div>
+            
             <div class="flex items-center gap-4">
                 <span id="status-indicator" class="w-2 h-2 rounded-full bg-green-500"></span>
                 <button onclick="refreshAllData()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm">Refresh Data</button>
@@ -76,31 +99,27 @@
 
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 bg-gray-50">
             
-            <!-- 1. DASHBOARD (STATISTIK UPDATE) -->
+            <!-- 1. DASHBOARD -->
             <div id="page-dashboard" class="page-section">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <!-- 1. Total Proyek -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
                         <p class="text-xs text-gray-400 uppercase font-bold">Total Proyek</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-1" id="val-total-projects">0</h3>
                         <p class="text-xs text-gray-400 mt-2">Semua status</p>
                     </div>
                     
-                    <!-- 2. Mandor Demo (Unique Names, Status Done) -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500">
                         <p class="text-xs text-gray-400 uppercase font-bold">Mandor Demo</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-1" id="val-mandor-done">0</h3>
                         <p class="text-xs text-gray-400 mt-2">Orang (Status Done)</p>
                     </div>
                     
-                    <!-- 3. Tukang Demo (Sum of Numbers, Status Done) -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
                         <p class="text-xs text-gray-400 uppercase font-bold">Tukang Demo</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-1" id="val-tukang-done">0</h3>
                         <p class="text-xs text-gray-400 mt-2">Total Jumlah (Status Done)</p>
                     </div>
 
-                    <!-- 4. Jadwal Aktif -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
                         <p class="text-xs text-gray-400 uppercase font-bold">Jadwal Aktif</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-1" id="val-schedule">0</h3>
@@ -108,57 +127,49 @@
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
                     <h3 class="font-bold text-lg mb-4">Aktivitas Terbaru</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-500">
-                            <thead class="bg-gray-50 text-gray-700 uppercase"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Tgl Jadwal</th><th class="p-3">Status</th><th class="p-3">Aksi</th></tr></thead>
-                            <tbody id="table-dashboard" class="divide-y"></tbody>
-                        </table>
-                    </div>
+                    <table class="w-full text-left text-sm text-gray-500 whitespace-nowrap">
+                        <thead class="bg-gray-50 text-gray-700 uppercase"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Tgl Jadwal</th><th class="p-3">Status</th><th class="p-3">Aksi</th></tr></thead>
+                        <tbody id="table-dashboard" class="divide-y"></tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- 2. LEADS -->
             <div id="page-leads" class="page-section hidden">
-                <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
                     <h2 class="text-xl font-bold text-blue-600 mb-4">Daftar Leads</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-500">
-                            <thead class="bg-gray-50"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Alamat</th><th class="p-3">Aksi</th></tr></thead>
-                            <tbody id="table-leads" class="divide-y"></tbody>
-                        </table>
-                    </div>
+                    <table class="w-full text-left text-sm text-gray-500 whitespace-nowrap">
+                        <thead class="bg-gray-50"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Alamat</th><th class="p-3">Aksi</th></tr></thead>
+                        <tbody id="table-leads" class="divide-y"></tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- 3. JADWAL PROYEK -->
             <div id="page-schedule" class="page-section hidden">
-                <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
                     <h2 class="text-xl font-bold text-yellow-600 mb-4">Jadwal Demo Mendatang</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-500">
-                            <thead class="bg-gray-50"><tr><th class="p-3">Tanggal</th><th class="p-3">Nama Proyek</th><th class="p-3">Alamat</th><th class="p-3">Klien</th><th class="p-3">Aksi</th></tr></thead>
-                            <tbody id="table-schedule" class="divide-y"></tbody>
-                        </table>
-                    </div>
+                    <table class="w-full text-left text-sm text-gray-500 whitespace-nowrap">
+                        <thead class="bg-gray-50"><tr><th class="p-3">Tanggal</th><th class="p-3">Nama Proyek</th><th class="p-3">Alamat</th><th class="p-3">Klien</th><th class="p-3">Aksi</th></tr></thead>
+                        <tbody id="table-schedule" class="divide-y"></tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- 4. DONE (SELESAI) -->
             <div id="page-done" class="page-section hidden">
-                <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
                     <h2 class="text-xl font-bold text-green-600 mb-4">Riwayat Demo Selesai</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-500">
-                            <thead class="bg-gray-50"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Tgl Selesai</th><th class="p-3">Aksi</th></tr></thead>
-                            <tbody id="table-done" class="divide-y"></tbody>
-                        </table>
-                    </div>
+                    <table class="w-full text-left text-sm text-gray-500 whitespace-nowrap">
+                        <thead class="bg-gray-50"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Tgl Selesai</th><th class="p-3">Aksi</th></tr></thead>
+                        <tbody id="table-done" class="divide-y"></tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- 5. INPUT / EDIT BARU (TUKANG JADI ANGKA) -->
+            <!-- 5. INPUT / EDIT BARU -->
             <div id="page-input" class="page-section hidden">
                 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-8">
                     <h2 class="text-2xl font-bold mb-6 border-b pb-2" id="form-title">Input Data Proyek</h2>
@@ -194,7 +205,6 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                            <!-- TUKANG DIUBAH JADI NUMBER -->
                             <div>
                                 <label class="block text-sm font-bold mb-2 text-gray-700">Jumlah Tukang</label>
                                 <input type="number" id="inp-tukang" min="0" class="w-full border border-gray-300 rounded p-2.5" placeholder="0">
@@ -265,6 +275,30 @@
 
         let viewMap, calendar, projectsData = [];
 
+        // --- FUNGSI UNTUK MOBILE MENU ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            // Toggle class translate
+            if (sidebar.classList.contains('-translate-x-full')) {
+                // Buka Sidebar
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                // Tutup Sidebar
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function closeSidebarMobile() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        }
+
         // 2. NAVIGASI
         function showPage(pageId) {
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
@@ -282,38 +316,31 @@
             if(pageId === 'map') initViewMap();
         }
 
-        // 3. REFRESH DATA (LOGIKA JUMLAH TUKANG & MANDOR)
+        // 3. REFRESH DATA
         async function refreshAllData() {
             const { data, error } = await _client.from('projects').select('*').order('date', { ascending: true });
             if (error) { alert("Error Database: " + error.message); return; }
             projectsData = data;
 
-            // 1. Total Proyek
             document.getElementById('val-total-projects').innerText = data.length;
 
-            // 2. Jadwal Aktif
             const schedules = data.filter(d => d.status === 'Schedule' || d.status === 'Active');
             document.getElementById('val-schedule').innerText = schedules.length;
 
-            // 3. Filter Data DONE
             const doneProjects = data.filter(d => d.status === 'Done');
 
-            // Hitung Mandor Unik (Done)
             const mandorSet = new Set();
             doneProjects.forEach(p => {
                 if(p.mandor) mandorSet.add(p.mandor.trim());
             });
             document.getElementById('val-mandor-done').innerText = mandorSet.size;
 
-            // Hitung Jumlah Tukang (SUM) (Done)
-            // Karena sekarang tukang adalah angka, kita jumlahkan
             const totalTukangDone = doneProjects.reduce((sum, p) => {
                 const count = parseInt(p.tukang);
                 return sum + (isNaN(count) ? 0 : count);
             }, 0);
             document.getElementById('val-tukang-done').innerText = totalTukangDone;
 
-            // Tables
             renderTable('table-dashboard', data, 5);
             renderTableLeads('table-leads', data.filter(d => d.status === 'Lead'));
             renderTableSchedule('table-schedule', schedules);
@@ -330,7 +357,6 @@
             }
         }
 
-        // --- RENDER TABLE ---
         function renderTable(tbodyId, data, limit) {
             const tbody = document.getElementById(tbodyId);
             tbody.innerHTML = '';
@@ -405,7 +431,6 @@
             });
         }
 
-        // --- EDIT ---
         function editProject(id) {
             const p = projectsData.find(d => d.id === id);
             if(!p) return;
@@ -415,9 +440,7 @@
             document.getElementById('inp-type').value = p.type || 'Rumah Tinggal';
             document.getElementById('inp-client').value = p.client || '';
             document.getElementById('inp-mandor').value = p.mandor || '';
-            // Load Tukang sebagai angka
             document.getElementById('inp-tukang').value = p.tukang || 0;
-            
             document.getElementById('inp-date').value = p.date || '';
             document.getElementById('inp-status').value = p.status || 'Lead';
             document.getElementById('inp-address').value = p.address || '';
@@ -436,7 +459,6 @@
             document.querySelector('form').reset();
         }
 
-        // 4. HANDLE INSERT / UPDATE
         async function handleInsertProject(e) {
             e.preventDefault();
             const id = document.getElementById('inp-id').value;
@@ -446,7 +468,7 @@
                 type: document.getElementById('inp-type').value,
                 client: document.getElementById('inp-client').value,
                 mandor: document.getElementById('inp-mandor').value,
-                tukang: parseInt(document.getElementById('inp-tukang').value) || 0, // Simpan sebagai integer
+                tukang: parseInt(document.getElementById('inp-tukang').value) || 0,
                 date: document.getElementById('inp-date').value,
                 status: document.getElementById('inp-status').value,
                 address: document.getElementById('inp-address').value,
@@ -477,7 +499,6 @@
             if(!error) refreshAllData();
         }
 
-        // 5. CALENDAR & MAP
         function initCalendar() {
             setTimeout(() => {
                 if(!calendar) {
