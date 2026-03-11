@@ -28,21 +28,72 @@
         #map-view { height: 500px; width: 100%; z-index: 1; border-radius: 0.5rem; }
         main { scroll-behavior: smooth; }
         
-        /* Print Style untuk Laporan */
+        /* PRINT STYLE: DIPERPERKET UNTUK MENGHILANGKAN HEADER */
         @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            body { background-color: white; }
-            #page-reports { padding: 0; margin: 0; }
-            .bg-white { box-shadow: none; border: 1px solid #ccc; }
+            /* 1. Sembunyikan total Sidebar dan Header */
+            aside, header {
+                display: none !important;
+            }
+            
+            /* 2. Sembunyikan elemen lain yang punya class no-print */
+            .no-print {
+                display: none !important;
+            }
+
+            /* 3. Reset Body agar hitam bersih */
+            body { 
+                background-color: white !important; 
+                height: auto !important; 
+                overflow: visible !important; 
+            }
+
+            /* 4. Reset Container utama agar isi laporan penuh */
+            .flex, .h-screen { 
+                display: block !important; 
+                height: auto !important; 
+                overflow: visible !important; 
+                width: auto !important;
+            }
+
+            /* 5. Tampilkan HALAMAN LAPORAN saja */
+            .page-section { display: none !important; }
+            #page-reports { 
+                display: block !important; 
+                position: static !important; 
+                padding: 0 !important; 
+                margin: 0 !important;
+                width: 100%;
+            }
+
+            /* 6. Styling Kertas Laporan agar rapi di PDF */
+            #report-paper { 
+                box-shadow: none !important; 
+                border: none !important; 
+                padding: 20px !important;
+                width: 100% !important;
+            }
+            
+            table { 
+                width: 100% !important; 
+                font-size: 12pt !important; /* Font dibuat agak besar agar mudah dibaca */
+                border-collapse: collapse !important;
+            }
+            th, td { 
+                border: 1px solid #000 !important; 
+                padding: 8px !important; 
+                text-align: left !important;
+            }
+            th { 
+                background-color: #f0f0f0 !important; /* Warna abu-abu muda untuk header tabel */
+                -webkit-print-color-adjust: exact; 
+            }
         }
-        .print-only { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased h-screen overflow-hidden flex">
 
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl md:shadow-none">
+    <aside id="sidebar" class="no-print w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl md:shadow-none">
         
         <div class="p-6 text-xl font-bold border-b border-slate-700 flex justify-between items-center">
             <div class="flex items-center gap-2">
@@ -64,7 +115,6 @@
             
             <a href="#" onclick="closeSidebarMobile(); resetForm(); showPage('input')" id="menu-input" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Input Baru</a>
             
-            <!-- MENU BARU: LAPORAN -->
             <a href="#" onclick="closeSidebarMobile(); showPage('reports')" id="menu-reports" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Laporan & Ekspor
@@ -91,7 +141,8 @@
 
     <!-- MAIN CONTENT -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden">
-        <header class="bg-white shadow-sm border-b border-gray-200 z-10 px-6 py-4 flex justify-between items-center flex-shrink-0">
+        <!-- HEADER (AKAN DIHILANGKAN SAAT PRINT) -->
+        <header class="no-print bg-white shadow-sm border-b border-gray-200 z-10 px-6 py-4 flex justify-between items-center flex-shrink-0">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -181,7 +232,7 @@
                 </div>
             </div>
 
-            <!-- 5. INPUT / EDIT BARU (+ KOLOM HP) -->
+            <!-- 5. INPUT / EDIT BARU -->
             <div id="page-input" class="page-section hidden">
                 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-8">
                     <h2 class="text-2xl font-bold mb-6 border-b pb-2" id="form-title">Input Data Proyek</h2>
@@ -210,10 +261,10 @@
                                 <label class="block text-sm font-bold mb-2 text-gray-700">Nama Klien *</label>
                                 <input type="text" id="inp-client" required class="w-full border border-gray-300 rounded p-2.5">
                             </div>
-                            <!-- TAMBAH KOLOM NO HP -->
                             <div>
                                 <label class="block text-sm font-bold mb-2 text-gray-700">No. HP Klien</label>
-                                <input type="text" id="inp-phone" class="w-full border border-gray-300 rounded p-2.5" placeholder="62812345678">
+                                <input type="text" id="inp-phone" class="w-full border border-gray-300 rounded p-2.5" placeholder="0812... atau 62812...">
+                                <p class="text-xs text-gray-400 mt-1">Digunakan untuk kirim WhatsApp</p>
                             </div>
                         </div>
 
@@ -262,11 +313,10 @@
                 </div>
             </div>
 
-            <!-- 6. LAPORAN & EKSPOR (FITUR BARU) -->
+            <!-- 6. LAPORAN & EKSPOR -->
             <div id="page-reports" class="page-section hidden">
                 <div class="max-w-6xl mx-auto">
                     
-                    <!-- Header Laporan -->
                     <div class="bg-white rounded-xl shadow-sm p-6 mb-6 no-print">
                         <h2 class="text-2xl font-bold mb-4">Laporan Bulanan & Ekspor</h2>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -305,37 +355,34 @@
                         </div>
                     </div>
 
-                    <!-- Kertas Laporan (Akan diprint) -->
-                    <div id="report-paper" class="bg-white rounded-xl shadow-sm p-8 print:p-0 print:shadow-none print:border-0">
-                        <!-- Judul Print -->
+                    <!-- KERTAS LAPORAN -->
+                    <div id="report-paper" class="bg-white rounded-xl shadow-sm p-8 print:p-0">
                         <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
                             <h1 class="text-3xl font-bold uppercase tracking-widest text-gray-800">LAPORAN DEMO PROYEK</h1>
-                            <p class="text-sm text-gray-600 mt-1">PT. BROCO INDONESIA</p>
+                            <p class="text-sm text-gray-600 mt-1">PT BROCO AERATED CONCRETE INDUSTRY</p>
                             <p class="text-sm font-bold text-gray-800 mt-2" id="report-period-display">PERIODE: BULAN - TAHUN</p>
                         </div>
 
-                        <!-- Ringkasan Statistik -->
                         <div class="grid grid-cols-3 gap-4 mb-8 text-center">
-                            <div class="bg-gray-100 p-4 rounded">
-                                <p class="text-xs text-gray-500 uppercase">Total Demo</p>
+                            <div class="bg-gray-100 p-4 rounded border border-gray-300">
+                                <p class="text-xs text-gray-500 uppercase">Total Demo Selesai</p>
                                 <p class="text-2xl font-bold text-gray-800" id="report-count">0</p>
                             </div>
-                            <div class="bg-gray-100 p-4 rounded">
+                            <div class="bg-gray-100 p-4 rounded border border-gray-300">
                                 <p class="text-xs text-gray-500 uppercase">Mandor Edukasi</p>
                                 <p class="text-2xl font-bold text-gray-800" id="report-mandor">0</p>
                             </div>
-                            <div class="bg-gray-100 p-4 rounded">
+                            <div class="bg-gray-100 p-4 rounded border border-gray-300">
                                 <p class="text-xs text-gray-500 uppercase">Tukang Demo</p>
                                 <p class="text-2xl font-bold text-gray-800" id="report-tukang">0</p>
                             </div>
                         </div>
 
-                        <!-- Tabel Laporan -->
                         <table class="w-full text-left text-sm text-gray-800 border-collapse border border-gray-300">
                             <thead class="bg-gray-200">
                                 <tr>
                                     <th class="border border-gray-300 p-2">No</th>
-                                    <th class="border border-gray-300 p-2">Tanggal</th>
+                                    <th class="border border-gray-300 p-2">Tanggal Selesai</th>
                                     <th class="border border-gray-300 p-2">Nama Proyek</th>
                                     <th class="border border-gray-300 p-2">Klien</th>
                                     <th class="border border-gray-300 p-2">Mandor</th>
@@ -343,12 +390,9 @@
                                     <th class="border border-gray-300 p-2">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="report-table-body">
-                                <!-- Data akan masuk di sini -->
-                            </tbody>
+                            <tbody id="report-table-body"></tbody>
                         </table>
                         
-                        <!-- Footer Print -->
                         <div class="mt-10 flex justify-between no-print">
                             <button onclick="window.print()" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900">🖨️ Cetak PDF</button>
                             <div class="text-right text-sm text-gray-500">
@@ -421,7 +465,7 @@
             }
             if(pageId === 'calendar') initCalendar();
             if(pageId === 'map') initViewMap();
-            if(pageId === 'reports') generateReport(); // Auto load report current month
+            if(pageId === 'reports') generateReport();
         }
 
         // 3. REFRESH DATA
@@ -463,12 +507,12 @@
             }
         }
 
-        // --- RENDER TABLES (+ Tombol WA) ---
+        // --- RENDER TABLES ---
         function renderTable(tbodyId, data, limit) {
             const tbody = document.getElementById(tbodyId);
             tbody.innerHTML = '';
             const items = limit ? data.slice(0, limit) : data;
-            if(items.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Kosong</td></tr>'; return; }
+            if(items.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Kosong</td></tr>'; return; }
             
             items.forEach(p => {
                 let badge = p.status === 'Done' ? 'bg-green-100 text-green-800' : (p.status === 'Lead' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800');
@@ -499,7 +543,7 @@
                         <td class="p-3 text-xs max-w-xs truncate">${p.address || '-'}</td>
                         <td class="p-3 text-xs font-mono">${p.phone || '-'}</td>
                         <td class="p-3 flex gap-1">
-                            <button onclick="sendWA(${p.id})" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600" title="Kirim WA">WA</button>
+                            <button onclick="sendWA(${p.id})" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">WA</button>
                             <button onclick="editProject(${p.id})" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300">Edit</button>
                             <button onclick="quickUpdate(${p.id}, 'Schedule')" class="text-xs bg-blue-600 text-white px-2 py-1 rounded">Jadwal</button>
                         </td>
@@ -544,7 +588,7 @@
             });
         }
 
-        // --- FITUR WHATSAPP ---
+        // --- WHATSAPP ---
         function sendWA(id) {
             const p = projectsData.find(d => d.id === id);
             if(!p) return;
@@ -554,18 +598,18 @@
                 phone = prompt("Masukkan nomor WhatsApp (628...):", "");
                 if(!phone) return;
             }
-
-            // Bersihkan nomor dari spasi atau simbol
             phone = phone.replace(/[^0-9]/g, '');
+            if (phone.startsWith('0')) { phone = '62' + phone.substring(1); } 
+            else if (phone.startsWith('+')) { phone = phone.substring(1); }
+            if(phone.length < 10) { alert("Nomor HP tidak valid."); return; }
 
-            // Format Pesan
-            const msg = `Halo Kak ${p.client},\n\nKami dari BROCO ingin mengingatkan jadwal demo teknis untuk proyek:\n\n*Proyek:* ${p.name}\n*Tanggal:* ${p.date}\n*Alamat:* ${p.address}\n*Mandor:* ${p.mandor}\n\nMohon dipersiapkan. Terima kasih.`;
+            const msg = `Halo Kak ${p.client},\n\nKami dari PT BROCO AERATED CONCRETE INDUSTRY ingin mengingatkan jadwal demo teknis untuk proyek:\n\n*Proyek:* ${p.name}\n*Tanggal:* ${p.date}\n*Alamat:* ${p.address}\n*Mandor:* ${p.mandor}\n\nMohon dipersiapkan. Terima kasih.`;
             
             const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
             window.open(url, '_blank');
         }
 
-        // --- FITUR EDIT ---
+        // --- EDIT ---
         function editProject(id) {
             const p = projectsData.find(d => d.id === id);
             if(!p) return;
@@ -636,7 +680,7 @@
             if(!error) refreshAllData();
         }
 
-        // --- FITUR LAPORAN & EXPORT EXCEL ---
+        // --- LAPORAN & EXCEL (LOGIKA HANYA DONE) ---
         let currentReportData = [];
 
         function generateReport() {
@@ -647,14 +691,17 @@
             document.getElementById('report-period-display').innerText = `PERIODE: ${monthNames[parseInt(month)-1]} ${year}`;
             document.getElementById('print-date').innerText = new Date().toLocaleDateString('id-ID');
 
-            // Filter Data
-            currentReportData = projectsData.filter(p => {
+            // 1. Filter Tanggal
+            const monthlyData = projectsData.filter(p => {
                 if(!p.date) return false;
                 const d = new Date(p.date);
                 return d.getFullYear() == year && (d.getMonth() + 1) == parseInt(month);
             });
 
-            // Hitung Statistik
+            // 2. Filter STATUS DONE
+            const currentReportData = monthlyData.filter(p => p.status === 'Done');
+
+            // 3. Hitung Statistik
             document.getElementById('report-count').innerText = currentReportData.length;
             
             const mandorSet = new Set();
@@ -667,11 +714,11 @@
             }, 0);
             document.getElementById('report-tukang').innerText = totalTukang;
 
-            // Render Table
+            // 4. Render Table
             const tbody = document.getElementById('report-table-body');
             tbody.innerHTML = '';
             if(currentReportData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Tidak ada data pada periode ini</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Tidak ada data demo selesai pada periode ini</td></tr>';
             } else {
                 currentReportData.forEach((p, index) => {
                     tbody.innerHTML += `
@@ -690,13 +737,9 @@
         }
 
         function exportToExcel() {
-            // Gunakan data yang sedang ditampilkan di laporan (currentReportData)
-            // Jika belum ada filter, gunakan semua data
-            const dataToExport = currentReportData.length > 0 ? currentReportData : projectsData;
-            
-            if(dataToExport.length === 0) { alert("Tidak ada data untuk diekspor."); return; }
+            const dataToExport = currentReportData.length > 0 ? currentReportData : [];
+            if(dataToExport.length === 0) { alert("Tidak ada data selesai untuk diekspor pada periode ini."); return; }
 
-            // Format data untuk Excel
             const excelData = dataToExport.map(p => ({
                 "Nama Proyek": p.name,
                 "Jenis": p.type,
@@ -704,7 +747,7 @@
                 "No HP": p.phone,
                 "Mandor": p.mandor,
                 "Jml Tukang": p.tukang,
-                "Tanggal": p.date,
+                "Tanggal Selesai": p.date,
                 "Status": p.status,
                 "Alamat": p.address,
                 "Koordinat": p.coords
@@ -712,9 +755,9 @@
 
             const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Laporan Demo");
+            XLSX.utils.book_append_sheet(wb, ws, "Laporan Demo Selesai");
             
-            const filename = `Laporan_Demo_${new Date().toISOString().slice(0,10)}.xlsx`;
+            const filename = `Laporan_Demo_Selesai_${new Date().toISOString().slice(0,10)}.xlsx`;
             XLSX.writeFile(wb, filename);
         }
 
