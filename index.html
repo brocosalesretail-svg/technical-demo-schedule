@@ -2,404 +2,618 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technical Demo Command Center</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TDCC - Command Center Broco</title>
     
-    <!-- 1. TAILWIND CSS -->
+    <!-- 1. TAILWIND & FONTS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    <!-- 2. SUPABASE LIBRARY -->
+    <!-- 2. LIBRARIES -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- 3. FULLCALENDAR -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
-
-    <!-- 4. LEAFLET -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- 5. SHEETJS -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 4px; }
-        .active-menu { background-color: #1e293b; color: white; border-left: 4px solid #3b82f6; }
-        #map-view { height: 500px; width: 100%; z-index: 1; border-radius: 0.5rem; }
-        main { scroll-behavior: smooth; }
+        :root {
+          --bg-metal: #0f1014;
+          --bg-gradient: linear-gradient(180deg, #1a1c23 0%, #0f1014 100%);
+          --glass-metal: rgba(30, 34, 45, 0.6);
+          --border-metal: rgba(255, 255, 255, 0.1);
+          --border-highlight: rgba(255, 255, 255, 0.2);
+          --primary: #06b6d4;
+          --primary-dark: #0891b2;
+          --accent: #10b981;
+          --purple: #8b5cf6;
+          --text-main: #f1f5f9;
+          --text-muted: #94a3b8;
+          --radius-xl: 20px;
+          --radius-md: 12px;
+          --sidebar-width: 260px;
+        }
+
+        * { box-sizing: border-box; tap-highlight-color: transparent; }
         
-        /* PRINT STYLE (Rapi & Pasti Muncul) */
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-metal);
+            background-image: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+        }
+
+        /* METAL CARD STYLE */
+        .metal-card {
+            background: var(--glass-metal);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border-metal);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+        .metal-card:hover {
+            border-color: var(--border-highlight);
+            transform: translateY(-2px);
+        }
+
+        /* SIDEBAR STYLE (MATCHING SI TUKANG) */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: rgba(15, 16, 20, 0.98);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-metal);
+            transition: left 0.3s ease;
+            z-index: 1000;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.active { left: 0; }
+        @media (min-width: 768px) {
+            .sidebar { left: 0; position: relative; }
+            .sidebar-overlay { display: none !important; }
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            z-index: 999;
+        }
+        .sidebar-overlay.active { display: block; }
+
+        .sidebar-brand {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: white;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+        }
+        .sidebar-brand span { color: var(--primary); }
+
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.05);
+            color: white;
+        }
+        .sidebar-link.active-menu {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        /* CUSTOM TABLE STYLE */
+        .metal-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        .metal-table thead th {
+            padding: 12px 16px;
+            text-align: left;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+        }
+        .metal-table tbody tr {
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.2s;
+        }
+        .metal-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.07);
+        }
+        .metal-table tbody td {
+            padding: 16px;
+            border-top: 1px solid var(--border-metal);
+            border-bottom: 1px solid var(--border-metal);
+        }
+        .metal-table tbody td:first-child { border-left: 1px solid var(--border-metal); border-radius: 12px 0 0 12px; }
+        .metal-table tbody td:last-child { border-right: 1px solid var(--border-metal); border-radius: 0 12px 12px 0; }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        #map-view { height: 500px; width: 100%; z-index: 1; border-radius: var(--radius-md); border: 1px solid var(--border-metal); filter: saturate(0.9) contrast(1.05) brightness(0.95); }
+
+        /* BUTTONS */
+        .btn-metal {
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-ghost { background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border-metal); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+
+        /* INPUTS */
+        .form-input {
+            background: rgba(0, 0, 0, 0.4); /* Solid dark background */
+            border: 1px solid var(--border-metal);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: white;
+            width: 100%;
+            transition: all 0.2s;
+            outline: none;
+            cursor: pointer;
+        }
+        .form-input:focus { border-color: var(--primary); background: rgba(0, 0, 0, 0.6); }
+        
+        /* Fix for invisible select options in dark mode */
+        select.form-input option {
+            background-color: #1a1c23 !important; /* Force dark background */
+            color: white !important; /* Force white text */
+            padding: 10px;
+        }
+        select.form-input:focus option {
+            background-color: #1a1c23 !important;
+            color: white !important;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-done { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-schedule { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-lead { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+
         @media print {
-            /* Sembunyikan elemen yang tidak perlu dicetak */
-            .no-print, header, aside {
-                display: none !important;
-            }
-
-            /* Tampilkan Halaman Laporan */
-            .page-section { display: none !important; }
-            #page-reports { 
-                display: block !important; 
-                position: static !important;
-                padding: 20px !important;
-                width: 100% !important;
-                height: auto !important;
-                background: white !important;
-            }
-
-            /* Reset layout container agar tidak terpotong */
-            body, .h-screen, .flex { 
-                height: auto !important; 
-                width: auto !important; 
-                display: block !important; 
-                overflow: visible !important;
-            }
-
-            /* Styling Tabel Agar Rapi */
-            table { 
-                width: 100% !important; 
-                font-size: 12pt !important;
-                border-collapse: collapse !important;
-            }
-            th, td { 
-                border: 1px solid #000 !important; 
-                padding: 8px !important;
-                text-align: left !important;
-            }
-            th { 
-                background-color: #f0f0f0 !important;
-                font-weight: bold !important;
-            }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans antialiased h-screen overflow-hidden flex">
+<body>
+
+    <!-- SIDEBAR OVERLAY -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="sidebar-overlay"></div>
 
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="no-print w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl md:shadow-none">
-        
-        <div class="p-6 text-xl font-bold border-b border-slate-700 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                TDCC
-            </div>
-            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
+    <aside id="sidebar" class="sidebar no-print">
+        <div class="sidebar-brand cursor-pointer select-none" onclick="handleSecretClick()">
+            <i class="fa-solid fa-tower-broadcast text-cyan-400"></i>
+            TDCC<span>COMMAND</span>
         </div>
         
-        <nav class="mt-6 flex-1 overflow-y-auto sidebar-scroll px-3 space-y-1">
-            <a href="#" onclick="closeSidebarMobile(); showPage('dashboard')" id="menu-dashboard" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg active-menu">Dashboard</a>
-            <a href="#" onclick="closeSidebarMobile(); showPage('leads')" id="menu-leads" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Leads</a>
-            <a href="#" onclick="closeSidebarMobile(); showPage('schedule')" id="menu-schedule" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Jadwal Proyek</a>
-            <a href="#" onclick="closeSidebarMobile(); showPage('done')" id="menu-done" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Done</a>
-            
-            <div class="border-t border-slate-700 my-2"></div>
-            
-            <a href="#" onclick="closeSidebarMobile(); resetForm(); showPage('input')" id="menu-input" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Input Baru</a>
-            
-            <a href="#" onclick="closeSidebarMobile(); showPage('reports')" id="menu-reports" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                Laporan & Ekspor
+        <nav class="sidebar-menu">
+            <a href="javascript:void(0)" onclick="showPage('dashboard')" id="menu-dashboard" class="sidebar-link active-menu">
+                <i class="fa-solid fa-chart-line w-5"></i> Dashboard
             </a>
-
-            <a href="#" onclick="closeSidebarMobile(); showPage('calendar')" id="menu-calendar" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Kalender</a>
-            <a href="#" onclick="closeSidebarMobile(); showPage('map')" id="menu-map" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white">Peta Lokasi</a>
+            <a href="javascript:void(0)" onclick="showPage('leads')" id="menu-leads" class="sidebar-link">
+                <i class="fa-solid fa-users w-5"></i> Manajemen Leads
+            </a>
+            <a href="javascript:void(0)" onclick="showPage('schedule')" id="menu-schedule" class="sidebar-link">
+                <i class="fa-solid fa-calendar-check w-5"></i> Jadwal Proyek
+            </a>
+            <a href="javascript:void(0)" onclick="showPage('done')" id="menu-done" class="sidebar-link">
+                <i class="fa-solid fa-circle-check w-5"></i> Proyek Selesai
+            </a>
+            
+            <div class="h-px bg-white/10 my-4 mx-4"></div>
+            
+            <a href="javascript:void(0)" onclick="resetForm(); showPage('input')" id="menu-input" class="sidebar-link">
+                <i class="fa-solid fa-plus-circle w-5"></i> Input Data Baru
+            </a>
+            <a href="javascript:void(0)" onclick="showPage('reports')" id="menu-reports" class="sidebar-link">
+                <i class="fa-solid fa-file-invoice w-5"></i> Laporan Bulanan
+            </a>
+            <a href="javascript:void(0)" onclick="showPage('calendar')" id="menu-calendar" class="sidebar-link">
+                <i class="fa-solid fa-calendar-days w-5"></i> Kalender
+            </a>
+            <a href="javascript:void(0)" onclick="showPage('map')" id="menu-map" class="sidebar-link">
+                <i class="fa-solid fa-map-location-dot w-5"></i> Peta Lokasi
+            </a>
+            <a href="javascript:void(0)" onclick="showPage('admin')" id="menu-admin" class="sidebar-link hidden">
+                <i class="fa-solid fa-shield-halved w-5"></i> Admin Control
+            </a>
         </nav>
 
-        <div class="p-4 border-t border-slate-700 flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold">A</div>
-            <div><p class="text-sm font-medium text-white">Admin</p><p class="text-xs text-slate-400">Online</p></div>
-        </div>
-
-        <div class="p-3 text-center border-t border-slate-800 bg-slate-950">
+        <div class="mt-auto pt-6 border-t border-white/10 text-center">
             <p class="text-[10px] text-slate-500 font-mono uppercase tracking-widest">
-                Credit By Rudi Philipus<br>@BROCO-2026
+                TDCC SYSTEM v8.0<br>@BROCO-2026
             </p>
         </div>
     </aside>
 
-    <!-- OVERLAY -->
-    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
-
     <!-- MAIN CONTENT -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden">
-        <!-- HEADER -->
-        <header class="no-print bg-white shadow-sm border-b border-gray-200 z-10 px-6 py-4 flex justify-between items-center flex-shrink-0">
+    <div class="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+        
+        <!-- TOP HEADER -->
+        <header class="no-print h-20 flex items-center justify-between px-6 border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-40">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <button onclick="toggleSidebar()" class="md:hidden text-white p-2">
+                    <i class="fa-solid fa-bars-staggered text-xl"></i>
                 </button>
-
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-800" id="page-title">Technical Demo Command Center</h1>
-                    <p class="text-xs text-gray-500">Manajemen Jadwal Demo Proyek</p>
+                    <h1 class="text-xl font-bold font-rajdhani tracking-wider text-white uppercase" id="page-title">Command Center</h1>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">System Online</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="flex items-center gap-4">
-                <span id="status-indicator" class="w-2 h-2 rounded-full bg-green-500"></span>
-                <button onclick="refreshAllData()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm">Refresh Data</button>
-            </div>
+            <button onclick="refreshAllData()" class="btn-metal btn-primary">
+                <i class="fa-solid fa-rotate w-4"></i> <span class="hidden sm:inline">Refresh Data</span>
+            </button>
         </header>
 
-        <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 bg-gray-50">
+        <main class="flex-1 p-6 md:p-8">
             
             <!-- 1. DASHBOARD -->
             <div id="page-dashboard" class="page-section">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                        <p class="text-xs text-gray-400 uppercase font-bold">Total Proyek</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-1" id="val-total-projects">0</h3>
-                        <p class="text-xs text-gray-400 mt-2">Semua status</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="metal-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-blue-500/20 rounded-xl text-blue-400"><i class="fa-solid fa-building text-xl"></i></div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Total</span>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white font-rajdhani" id="val-total-projects">0</h3>
+                        <p class="text-xs text-slate-400 mt-1 uppercase font-bold tracking-tighter">Total Seluruh Proyek</p>
                     </div>
                     
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500">
-                        <p class="text-xs text-gray-400 uppercase font-bold">Mandor Demo</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-1" id="val-mandor-done">0</h3>
-                        <p class="text-xs text-gray-400 mt-2">Orang (Status Done)</p>
+                    <div class="metal-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-yellow-500/20 rounded-xl text-yellow-400"><i class="fa-solid fa-user-tie text-xl"></i></div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Mandor</span>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white font-rajdhani" id="val-mandor-done">0</h3>
+                        <p class="text-xs text-slate-400 mt-1 uppercase font-bold tracking-tighter">Mandor Terlibat (Done)</p>
                     </div>
                     
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
-                        <p class="text-xs text-gray-400 uppercase font-bold">Tukang Demo</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-1" id="val-tukang-done">0</h3>
-                        <p class="text-xs text-gray-400 mt-2">Total Jumlah (Status Done)</p>
+                    <div class="metal-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-green-500/20 rounded-xl text-green-400"><i class="fa-solid fa-helmet-safety text-xl"></i></div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Tukang</span>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white font-rajdhani" id="val-tukang-done">0</h3>
+                        <p class="text-xs text-slate-400 mt-1 uppercase font-bold tracking-tighter">Tukang Terlibat (Done)</p>
                     </div>
 
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
-                        <p class="text-xs text-gray-400 uppercase font-bold">Jadwal Aktif</p>
-                        <h3 class="text-3xl font-bold text-gray-800 mt-1" id="val-schedule">0</h3>
-                        <p class="text-xs text-gray-400 mt-2">Schedule / Active</p>
+                    <div class="metal-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-purple-500/20 rounded-xl text-purple-400"><i class="fa-solid fa-calendar-day text-xl"></i></div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Active</span>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white font-rajdhani" id="val-schedule">0</h3>
+                        <p class="text-xs text-slate-400 mt-1 uppercase font-bold tracking-tighter">Jadwal Aktif Mendatang</p>
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
-                    <h3 class="font-bold text-lg mb-4">Aktivitas Terbaru</h3>
-                    <table class="w-full text-left text-sm text-gray-500 whitespace-nowrap">
-                        <thead class="bg-gray-50 text-gray-700 uppercase"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Tgl Jadwal</th><th class="p-3">Status</th><th class="p-3">Aksi</th></tr></thead>
-                        <tbody id="table-dashboard" class="divide-y"></tbody>
+                <div class="metal-card overflow-x-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-lg text-white">Aktivitas Terkini</h3>
+                        <span class="text-[10px] text-slate-500 uppercase font-bold">5 Data Terbaru</span>
+                    </div>
+                    <table class="metal-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Proyek</th>
+                                <th>Jenis</th>
+                                <th>Klien</th>
+                                <th>Tanggal</th>
+                                <th>Status</th>
+                                <th class="text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-dashboard"></tbody>
                     </table>
                 </div>
             </div>
 
             <!-- 2. LEADS -->
             <div id="page-leads" class="page-section hidden">
-                <div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
-                    <h2 class="text-xl font-bold text-blue-600 mb-4">Daftar Leads</h2>
-                    <table class="w-full text-left text-sm text-gray-500 whitespace-nowrap">
-                        <thead class="bg-gray-50"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Alamat</th><th class="p-3">No. HP</th><th class="p-3">Aksi</th></tr></thead>
-                        <tbody id="table-leads" class="divide-y"></tbody>
+                <div class="metal-card overflow-x-auto">
+                    <h2 class="text-xl font-bold text-blue-400 mb-6 font-rajdhani">DATABASE POTENSIAL LEADS</h2>
+                    <table class="metal-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Proyek</th>
+                                <th>Jenis</th>
+                                <th>Klien</th>
+                                <th>Alamat</th>
+                                <th>No. HP</th>
+                                <th class="text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-leads"></tbody>
                     </table>
                 </div>
             </div>
 
             <!-- 3. JADWAL PROYEK -->
             <div id="page-schedule" class="page-section hidden">
-                <div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
-                    <h2 class="text-xl font-bold text-yellow-600 mb-4">Jadwal Demo Mendatang</h2>
-                    <table class="w-full text-left text-sm text-gray-500 whitespace-nowrap">
-                        <thead class="bg-gray-50"><tr><th class="p-3">Tanggal</th><th class="p-3">Nama Proyek</th><th class="p-3">Alamat</th><th class="p-3">Klien</th><th class="p-3">No. HP</th><th class="p-3">Aksi</th></tr></thead>
-                        <tbody id="table-schedule" class="divide-y"></tbody>
+                <div class="metal-card overflow-x-auto">
+                    <h2 class="text-xl font-bold text-yellow-400 mb-6 font-rajdhani">JADWAL DEMO MENDATANG</h2>
+                    <table class="metal-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Nama Proyek</th>
+                                <th>Alamat</th>
+                                <th>Klien</th>
+                                <th>No. HP</th>
+                                <th class="text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-schedule"></tbody>
                     </table>
                 </div>
             </div>
 
             <!-- 4. DONE (SELESAI) -->
             <div id="page-done" class="page-section hidden">
-                <div class="bg-white rounded-xl shadow-sm p-6 overflow-x-auto">
-                    <h2 class="text-xl font-bold text-green-600 mb-4">Riwayat Demo Selesai</h2>
-                    <table class="w-full text-left text-sm text-gray-500 whitespace-nowrap">
-                        <thead class="bg-gray-50"><tr><th class="p-3">Nama Proyek</th><th class="p-3">Jenis</th><th class="p-3">Klien</th><th class="p-3">Tgl Selesai</th><th class="p-3">Aksi</th></tr></thead>
-                        <tbody id="table-done" class="divide-y"></tbody>
+                <div class="metal-card overflow-x-auto">
+                    <h2 class="text-xl font-bold text-green-400 mb-6 font-rajdhani">RIWAYAT PROYEK SELESAI</h2>
+                    <table class="metal-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Proyek</th>
+                                <th>Jenis</th>
+                                <th>Klien</th>
+                                <th>Tgl Selesai</th>
+                                <th class="text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-done"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- 5. INPUT / EDIT BARU -->
+            <!-- 5. INPUT / EDIT -->
             <div id="page-input" class="page-section hidden">
-                <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-8">
-                    <h2 class="text-2xl font-bold mb-6 border-b pb-2" id="form-title">Input Data Proyek</h2>
+                <div class="max-w-4xl mx-auto metal-card">
+                    <h2 class="text-2xl font-bold mb-8 font-rajdhani border-b border-white/10 pb-4" id="form-title">INPUT DATA PROYEK</h2>
                     <form onsubmit="handleInsertProject(event)">
-                        
                         <input type="hidden" id="inp-id">
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-bold mb-2 text-gray-700">Nama Proyek *</label>
-                                <input type="text" id="inp-name" required class="w-full border border-gray-300 rounded p-2.5">
+                                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Nama Proyek *</label>
+                                <input type="text" id="inp-name" required class="form-input" placeholder="Nama proyek lapangan">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold mb-2 text-gray-700">Jenis Proyek</label>
-                                <select id="inp-type" class="w-full border border-gray-300 rounded p-2.5 bg-white">
+                                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Jenis Proyek</label>
+                                <select id="inp-type" class="form-input">
                                     <option value="Rumah Tinggal">Rumah Tinggal</option>
                                     <option value="Ruko">Ruko / Rukan</option>
                                     <option value="Gudang">Gudang</option>
                                     <option value="Kantor">Kantor</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                             <div>
-                                <label class="block text-sm font-bold mb-2 text-gray-700">Nama Klien *</label>
-                                <input type="text" id="inp-client" required class="w-full border border-gray-300 rounded p-2.5">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold mb-2 text-gray-700">No. HP Klien</label>
-                                <input type="text" id="inp-phone" class="w-full border border-gray-300 rounded p-2.5" placeholder="0812... atau 62812...">
-                                <p class="text-xs text-gray-400 mt-1">Digunakan untuk kirim WhatsApp</p>
+                                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Nama Klien / Owner *</label>
+                                <input type="text" id="inp-client" required class="form-input" placeholder="Nama PIC Proyek">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
-                                <label class="block text-sm font-bold mb-2 text-gray-700">Nama Mandor</label>
-                                <input type="text" id="inp-mandor" class="w-full border border-gray-300 rounded p-2.5">
+                                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Nomor WhatsApp *</label>
+                                <input type="text" id="inp-phone" required class="form-input" placeholder="Contoh: 08123456789">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold mb-2 text-gray-700">Jumlah Tukang</label>
-                                <input type="number" id="inp-tukang" min="0" class="w-full border border-gray-300 rounded p-2.5" placeholder="0">
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                            <div>
-                                <label class="block text-sm font-bold mb-2 text-gray-700">Tanggal Jadwal Demo</label>
-                                <input type="date" id="inp-date" class="w-full border border-gray-300 rounded p-2.5">
+                                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Nama Mandor</label>
+                                <input type="text" id="inp-mandor" class="form-input" placeholder="Nama mandor lapangan">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold mb-2 text-gray-700">Status</label>
-                                <select id="inp-status" class="w-full border border-gray-300 rounded p-2.5 bg-white">
-                                    <option value="Lead">Lead (Potensi)</option>
-                                    <option value="Schedule">Schedule (Terjadwal)</option>
-                                    <option value="Active">Active (Sedang Jalan)</option>
-                                    <option value="Done">Done (Selesai)</option>
-                                </select>
+                                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Jumlah Tukang</label>
+                                <input type="number" id="inp-tukang" class="form-input" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Tanggal Jadwal/Selesai</label>
+                                <input type="date" id="inp-date" class="form-input">
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-2 text-gray-700">Alamat Lengkap</label>
-                            <textarea id="inp-address" rows="2" class="w-full border border-gray-300 rounded p-2.5"></textarea>
+                        <div class="mb-6">
+                            <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Status Proyek</label>
+                            <select id="inp-status" class="form-input">
+                                <option value="Lead">Lead (Potensi)</option>
+                                <option value="Schedule">Schedule (Jadwal)</option>
+                                <option value="Active">Active (Berlangsung)</option>
+                                <option value="Done">Done (Selesai)</option>
+                            </select>
                         </div>
 
-                        <div class="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                            <label class="block text-sm font-bold mb-2 text-blue-800">Koordinat (Latitude, Longitude)</label>
-                            <input type="text" id="inp-coords" class="w-full border border-gray-300 rounded p-2.5 text-gray-700" placeholder="Contoh: -6.2088, 106.8456">
+                        <div class="mb-6">
+                            <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Alamat Lengkap</label>
+                            <textarea id="inp-address" rows="3" class="form-input" placeholder="Alamat lokasi proyek"></textarea>
                         </div>
 
-                        <div class="flex justify-between items-center">
-                            <button type="button" onclick="showPage('dashboard')" class="text-gray-500 hover:text-gray-700 text-sm">Batal</button>
-                            <button type="submit" class="px-6 py-2.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 shadow-md transition" id="btn-save">Simpan Data</button>
+                        <div class="mb-8">
+                            <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">Koordinat Lokasi (Lat, Lng)</label>
+                            <input type="text" id="inp-coords" class="form-input" placeholder="-6.2088, 106.8456">
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button type="submit" id="btn-save" class="btn-metal btn-primary flex-1 justify-center py-3">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Proyek
+                            </button>
+                            <button type="button" onclick="showPage('dashboard')" class="btn-metal btn-ghost">Batal</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- 6. LAPORAN & EKSPOR -->
+            <!-- 6. REPORTS -->
             <div id="page-reports" class="page-section hidden">
-                <div class="max-w-6xl mx-auto">
-                    
-                    <div class="bg-white rounded-xl shadow-sm p-6 mb-6 no-print">
-                        <h2 class="text-2xl font-bold mb-4">Laporan Bulanan & Ekspor</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-1">Pilih Bulan</label>
-                                <select id="report-month" class="w-full border rounded p-2 bg-white">
-                                    <option value="01">Januari</option>
-                                    <option value="02">Februari</option>
-                                    <option value="03">Maret</option>
-                                    <option value="04">April</option>
-                                    <option value="05">Mei</option>
-                                    <option value="06">Juni</option>
-                                    <option value="07">Juli</option>
-                                    <option value="08">Agustus</option>
-                                    <option value="09">September</option>
-                                    <option value="10">Oktober</option>
-                                    <option value="11">November</option>
-                                    <option value="12">Desember</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700 mb-1">Tahun</label>
-                                <select id="report-year" class="w-full border rounded p-2 bg-white">
-                                    <option value="2024">2024</option>
-                                    <option value="2025">2025</option>
-                                    <option value="2026" selected>2026</option>
-                                    <option value="2027">2027</option>
-                                </select>
-                            </div>
-                            <div>
-                                <button onclick="generateReport()" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">Tampilkan Laporan</button>
-                            </div>
-                            <div>
-                                <button onclick="exportToExcel()" class="w-full bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Download Excel</button>
-                            </div>
+                <div class="max-w-5xl mx-auto metal-card mb-8">
+                    <h2 class="text-xl font-bold mb-6 font-rajdhani text-white">GENERATOR LAPORAN BULANAN</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                        <div>
+                            <label class="block text-xs font-bold mb-2 text-slate-400">PILIH BULAN</label>
+                            <select id="report-month" class="form-input">
+                                <option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option>
+                                <option value="04">April</option><option value="05">Mei</option><option value="06">Juni</option>
+                                <option value="07">Juli</option><option value="08">Agustus</option><option value="09">September</option>
+                                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold mb-2 text-slate-400">PILIH TAHUN</label>
+                            <select id="report-year" class="form-input">
+                                <option value="2024">2024</option><option value="2025">2025</option><option value="2026" selected>2026</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="generateReport()" class="btn-metal btn-primary flex-1 justify-center">
+                                <i class="fa-solid fa-magnifying-glass"></i> Tampilkan
+                            </button>
+                            <button onclick="exportToExcel()" class="btn-metal btn-ghost" title="Export Excel">
+                                <i class="fa-solid fa-file-excel text-green-500"></i>
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    <!-- KERTAS LAPORAN -->
-                    <div id="report-paper" class="bg-white rounded-xl shadow-sm p-8 print:p-0">
-                        <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
-                            <h1 class="text-3xl font-bold uppercase tracking-widest text-gray-800">LAPORAN DEMO PROYEK</h1>
-                            <p class="text-sm text-gray-600 mt-1">PT BROCO AERATED CONCRETE INDUSTRY</p>
-                            <p class="text-sm font-bold text-gray-800 mt-2" id="report-period-display">PERIODE: BULAN - TAHUN</p>
-                        </div>
+                <div class="max-w-5xl mx-auto metal-card bg-white text-slate-900" id="report-paper">
+                    <!-- Preview Area -->
+                    <div class="text-center p-20 text-slate-400 italic">Pilih periode dan klik Tampilkan untuk melihat preview.</div>
+                </div>
+                
+                <div class="max-w-5xl mx-auto mt-8 flex justify-center">
+                    <button onclick="printProfessionalPDF()" class="btn-metal btn-primary py-4 px-10 text-lg shadow-2xl">
+                        <i class="fa-solid fa-print"></i> CETAK LAPORAN PROFESIONAL (PDF)
+                    </button>
+                </div>
+            </div>
 
-                        <!-- Ringkasan Statistik -->
-                        <div class="grid grid-cols-3 gap-4 mb-8 text-center">
-                            <div class="bg-gray-100 p-4 rounded border border-gray-300">
-                                <p class="text-xs text-gray-500 uppercase">Total Demo Selesai</p>
-                                <p class="text-2xl font-bold text-gray-800" id="report-count">0</p>
-                            </div>
-                            <div class="bg-gray-100 p-4 rounded border border-gray-300">
-                                <p class="text-xs text-gray-500 uppercase">Mandor Edukasi</p>
-                                <p class="text-2xl font-bold text-gray-800" id="report-mandor">0</p>
-                            </div>
-                            <div class="bg-gray-100 p-4 rounded border border-gray-300">
-                                <p class="text-xs text-gray-500 uppercase">Tukang Demo</p>
-                                <p class="text-2xl font-bold text-gray-800" id="report-tukang">0</p>
-                            </div>
-                        </div>
-
-                        <!-- Tabel Laporan -->
-                        <table class="w-full text-left text-sm text-gray-800 border-collapse border border-gray-300">
-                            <thead class="bg-gray-200">
-                                <tr>
-                                    <th class="border border-gray-300 p-2">No</th>
-                                    <th class="border border-gray-300 p-2">Tanggal</th>
-                                    <th class="border border-gray-300 p-2">Nama Proyek</th>
-                                    <th class="border border-gray-300 p-2">Klien</th>
-                                    <th class="border border-gray-300 p-2">Mandor</th>
-                                    <th class="border border-gray-300 p-2">Jml Tukang</th>
-                                    <th class="border border-gray-300 p-2">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="report-table-body"></tbody>
-                        </table>
+            <!-- 7. ADMIN PANEL -->
+            <div id="page-admin" class="page-section hidden">
+                <div class="max-w-4xl mx-auto">
+                    <div class="metal-card mb-8">
+                        <h2 class="text-2xl font-bold mb-2 font-rajdhani text-white">ADMIN COMMAND CENTER</h2>
+                        <p class="text-xs text-slate-400 mb-8 uppercase tracking-widest font-bold">Maintenance & Database Control</p>
                         
-                        <div class="mt-10 flex justify-between no-print">
-                            <button onclick="window.print()" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900">🖨️ Cetak PDF</button>
-                            <div class="text-right text-sm text-gray-500">
-                                <p>Dicetak pada: <span id="print-date"></span></p>
-                                <p>Generate oleh: Technical Demo Command Center</p>
+                        <!-- DATABASE CONTROL (SECRET AREA) -->
+                        <div id="secret-admin-area" class="grid grid-cols-1 md:grid-cols-2 gap-8 hidden animate-fade-in">
+                            <div class="p-6 rounded-2xl bg-white/5 border border-white/10">
+                                <h3 class="font-bold text-white mb-6 flex items-center gap-3">
+                                    <i class="fa-solid fa-file-export text-blue-400"></i> Ekspor & Backup
+                                </h3>
+                                <div class="space-y-4">
+                                    <button onclick="downloadReportDB()" class="w-full btn-metal btn-ghost justify-between py-4">
+                                        <span>Download Database (JSON)</span>
+                                        <i class="fa-solid fa-download opacity-40"></i>
+                                    </button>
+                                    <button onclick="exportToExcel()" class="w-full btn-metal btn-ghost justify-between py-4">
+                                        <span>Export All Data to Excel</span>
+                                        <i class="fa-solid fa-file-excel text-green-500"></i>
+                                    </button>
+                                </div>
                             </div>
+
+                            <div class="p-6 rounded-2xl bg-red-500/5 border border-red-500/20">
+                                <h3 class="font-bold text-red-400 mb-6 flex items-center gap-3">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Danger Zone
+                                </h3>
+                                <button onclick="clearReportDB()" class="w-full btn-metal btn-danger justify-center py-4">
+                                    <i class="fa-solid fa-trash-can"></i> HAPUS SELURUH DATABASE
+                                </button>
+                                <p class="text-[10px] text-red-400/60 mt-4 italic text-center uppercase font-bold">
+                                    * Data di Cloud & Browser akan dihapus permanen.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- PUBLIC ADMIN INFO -->
+                        <div id="admin-placeholder" class="py-20 text-center text-slate-500 italic">
+                            <i class="fa-solid fa-lock text-4xl mb-4 opacity-20"></i>
+                            <p>Akses Terbatas. Gunakan kunci rahasia untuk membuka kontrol database.</p>
+                        </div>
+                    </div>
+
+                    <div class="metal-card bg-gradient-to-r from-blue-600 to-cyan-500 text-white flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-lg font-rajdhani tracking-wider">SYSTEM STATUS</h4>
+                            <p class="text-blue-100 text-[10px] uppercase font-bold opacity-70">Build @2026 — Secure Command Mode</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-3xl font-rajdhani font-bold" id="admin-total-count">0</p>
+                            <p class="text-[10px] uppercase tracking-widest font-bold opacity-70">Total Entries</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 7. KALENDER -->
+            <!-- 8. CALENDAR -->
             <div id="page-calendar" class="page-section hidden">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h2 class="text-xl font-bold mb-4">Kalender Demo</h2>
-                    <div id="calendar"></div>
+                <div class="metal-card">
+                    <h2 class="text-xl font-bold mb-6 font-rajdhani text-white">KALENDER KEGIATAN DEMO</h2>
+                    <div id="calendar" class="bg-white rounded-xl p-4 text-slate-900"></div>
                 </div>
             </div>
 
-            <!-- 8. PETA -->
+            <!-- 9. PETA -->
             <div id="page-map" class="page-section hidden">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h2 class="text-xl font-bold mb-4">Peta Sebaran</h2>
+                <div class="metal-card">
+                    <h2 class="text-xl font-bold mb-6 font-rajdhani text-white">PETA SEBARAN PROYEK</h2>
                     <div id="map-view"></div>
                 </div>
             </div>
@@ -421,94 +635,131 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
         }
         function closeSidebarMobile() {
-            document.getElementById('sidebar').classList.add('-translate-x-full');
-            document.getElementById('sidebar-overlay').classList.add('hidden');
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('sidebar-overlay').classList.remove('active');
         }
 
         // 2. NAVIGASI
         function showPage(pageId) {
+            closeSidebarMobile();
+            
+            // Hide all pages
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('nav a').forEach(el => {
-                el.classList.remove('active-menu');
-                el.classList.add('text-slate-400');
-            });
-            document.getElementById('page-' + pageId).classList.remove('hidden');
-            const menu = document.getElementById('menu-' + pageId);
-            if(menu) {
-                menu.classList.add('active-menu');
-                menu.classList.remove('text-slate-400');
+            
+            // Show target page
+            const targetPage = document.getElementById('page-' + pageId);
+            if(targetPage) {
+                targetPage.classList.remove('hidden');
+            } else {
+                console.error("Page not found: page-" + pageId);
+                document.getElementById('page-dashboard').classList.remove('hidden');
+                pageId = 'dashboard';
             }
+
+            // Update Menu Active Style
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active-menu'));
+            const menu = document.getElementById('menu-' + pageId);
+            if(menu) menu.classList.add('active-menu');
+
+            // Trigger Inits
             if(pageId === 'calendar') initCalendar();
             if(pageId === 'map') initViewMap();
             if(pageId === 'reports') generateReport();
+            
+            // Update Title
+            const titles = {
+                'dashboard': 'Technical Command Center',
+                'leads': 'Manajemen Potensial Leads',
+                'schedule': 'Jadwal Demo Proyek',
+                'done': 'Riwayat Proyek Selesai',
+                'input': 'Input Data Proyek',
+                'reports': 'Laporan Bulanan',
+                'admin': 'Admin System Control',
+                'calendar': 'Kalender Kegiatan',
+                'map': 'Peta Sebaran Lokasi'
+            };
+            document.getElementById('page-title').innerText = titles[pageId] || 'TDCC Command Center';
+            window.scrollTo(0,0);
         }
 
         // 3. REFRESH DATA
         async function refreshAllData() {
-            const { data, error } = await _client.from('projects').select('*').order('date', { ascending: true });
-            if (error) { alert("Error Database: " + error.message); return; }
-            projectsData = data;
+            try {
+                const { data, error } = await _client.from('projects').select('*').order('date', { ascending: true });
+                if (error) throw error;
+                projectsData = data || [];
 
-            document.getElementById('val-total-projects').innerText = data.length;
+                document.getElementById('val-total-projects').innerText = projectsData.length;
 
-            const schedules = data.filter(d => d.status === 'Schedule' || d.status === 'Active');
-            document.getElementById('val-schedule').innerText = schedules.length;
+                const schedules = projectsData.filter(d => d.status === 'Schedule' || d.status === 'Active');
+                document.getElementById('val-schedule').innerText = schedules.length;
 
-            const doneProjects = data.filter(d => d.status === 'Done');
+                const doneProjects = projectsData.filter(d => d.status === 'Done');
 
-            const mandorSet = new Set();
-            doneProjects.forEach(p => { if(p.mandor) mandorSet.add(p.mandor.trim()); });
-            document.getElementById('val-mandor-done').innerText = mandorSet.size;
+                const mandorSet = new Set();
+                doneProjects.forEach(p => { if(p.mandor) mandorSet.add(p.mandor.trim()); });
+                document.getElementById('val-mandor-done').innerText = mandorSet.size;
 
-            const totalTukangDone = doneProjects.reduce((sum, p) => {
-                const count = parseInt(p.tukang);
-                return sum + (isNaN(count) ? 0 : count);
-            }, 0);
-            document.getElementById('val-tukang-done').innerText = totalTukangDone;
+                const totalTukangDone = doneProjects.reduce((sum, p) => {
+                    const count = parseInt(p.tukang);
+                    return sum + (isNaN(count) ? 0 : count);
+                }, 0);
+                document.getElementById('val-tukang-done').innerText = totalTukangDone;
 
-            renderTable('table-dashboard', data, 5);
-            renderTableLeads('table-leads', data.filter(d => d.status === 'Lead'));
-            renderTableSchedule('table-schedule', schedules);
-            renderTableDone('table-done', doneProjects);
+                if(document.getElementById('admin-total-count')) {
+                    document.getElementById('admin-total-count').innerText = projectsData.length;
+                }
 
-            if(calendar) {
-                calendar.removeAllEvents();
-                data.forEach(p => {
-                    if(p.date) {
-                        let color = p.status === 'Done' ? 'green' : (p.status === 'Lead' ? 'blue' : 'orange');
-                        calendar.addEvent({ title: p.name, start: p.date, color: color });
-                    }
-                });
+                renderTable('table-dashboard', projectsData, 5);
+                renderTableLeads('table-leads', projectsData.filter(d => d.status === 'Lead'));
+                renderTableSchedule('table-schedule', schedules);
+                renderTableDone('table-done', doneProjects);
+
+                if(calendar) {
+                    calendar.removeAllEvents();
+                    projectsData.forEach(p => {
+                        if(p.date) {
+                            let color = p.status === 'Done' ? '#10b981' : (p.status === 'Lead' ? '#3b82f6' : '#f59e0b');
+                            calendar.addEvent({ title: p.name, start: p.date, backgroundColor: color, borderColor: color });
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Database Error:", err.message);
             }
         }
 
         // --- RENDER TABLES ---
         function renderTable(tbodyId, data, limit) {
             const tbody = document.getElementById(tbodyId);
+            if(!tbody) return;
             tbody.innerHTML = '';
             const items = limit ? data.slice(0, limit) : data;
-            if(items.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Kosong</td></tr>'; return; }
+            if(items.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500 italic">Belum ada data aktivitas...</td></tr>'; 
+                return; 
+            }
             
             items.forEach(p => {
-                let badge = p.status === 'Done' ? 'bg-green-100 text-green-800' : (p.status === 'Lead' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800');
+                let badgeClass = p.status === 'Done' ? 'badge-done' : (p.status === 'Lead' ? 'badge-lead' : 'badge-schedule');
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b">
-                        <td class="p-3 font-medium">${p.name}</td>
-                        <td class="p-3 text-xs">${p.type || '-'}</td>
-                        <td class="p-3 text-xs">${p.client || '-'}</td>
-                        <td class="p-3 text-xs">${p.date || '-'}</td>
-                        <td class="p-3"><span class="${badge} text-xs px-2 py-1 rounded font-bold">${p.status}</span></td>
-                        <td class="p-3 flex gap-1">
-                            <button onclick="editProject(${p.id})" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300">Edit</button>
+                    <tr>
+                        <td class="font-bold text-white">${p.name}</td>
+                        <td class="text-xs text-slate-400">${p.type || '-'}</td>
+                        <td class="text-xs">${p.client || '-'}</td>
+                        <td class="text-xs font-mono">${p.date || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${p.status}</span></td>
+                        <td class="text-right flex justify-end gap-2">
+                            <button onclick="editProject(${p.id})" class="btn-metal btn-ghost text-[10px] px-3 py-1.5 inline-flex" title="Edit">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteProject(${p.id})" class="btn-metal bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] px-3 py-1.5 inline-flex" title="Hapus">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </td>
                     </tr>`;
             });
@@ -516,20 +767,22 @@
 
         function renderTableLeads(tbodyId, data) {
             const tbody = document.getElementById(tbodyId);
+            if(!tbody) return;
             tbody.innerHTML = '';
-            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Tidak ada Leads</td></tr>'; return; }
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">Database leads kosong</td></tr>'; return; }
             data.forEach(p => {
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b">
-                        <td class="p-3 font-medium">${p.name}</td>
-                        <td class="p-3 text-xs">${p.type || '-'}</td>
-                        <td class="p-3 text-xs">${p.client || '-'}</td>
-                        <td class="p-3 text-xs max-w-xs truncate">${p.address || '-'}</td>
-                        <td class="p-3 text-xs font-mono">${p.phone || '-'}</td>
-                        <td class="p-3 flex gap-1">
-                            <button onclick="sendWA(${p.id})" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">WA</button>
-                            <button onclick="editProject(${p.id})" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300">Edit</button>
-                            <button onclick="quickUpdate(${p.id}, 'Schedule')" class="text-xs bg-blue-600 text-white px-2 py-1 rounded">Jadwal</button>
+                    <tr>
+                        <td class="font-bold text-white">${p.name}</td>
+                        <td class="text-xs text-slate-400">${p.type || '-'}</td>
+                        <td class="text-xs">${p.client || '-'}</td>
+                        <td class="text-xs max-w-xs truncate text-slate-400">${p.address || '-'}</td>
+                        <td class="text-xs font-mono text-cyan-400">${p.phone || '-'}</td>
+                        <td class="flex justify-end gap-2">
+                            <button onclick="sendWA(${p.id})" class="btn-metal bg-green-500/20 text-green-400 border border-green-500/30 text-[10px] px-3 py-1.5 inline-flex">WA</button>
+                            <button onclick="editProject(${p.id})" class="btn-metal btn-ghost text-[10px] px-3 py-1.5 inline-flex">EDIT</button>
+                            <button onclick="quickUpdate(${p.id}, 'Schedule')" class="btn-metal btn-primary text-[10px] px-3 py-1.5 inline-flex">JADWAL</button>
+                            <button onclick="deleteProject(${p.id})" class="btn-metal bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] px-3 py-1.5 inline-flex"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>`;
             });
@@ -537,20 +790,22 @@
 
         function renderTableSchedule(tbodyId, data) {
             const tbody = document.getElementById(tbodyId);
+            if(!tbody) return;
             tbody.innerHTML = '';
-            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">Tidak ada jadwal</td></tr>'; return; }
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">Tidak ada jadwal demo mendesak</td></tr>'; return; }
             data.forEach(p => {
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b">
-                        <td class="p-3 font-mono text-blue-600 font-bold">${p.date || '-'}</td>
-                        <td class="p-3 font-medium">${p.name}</td>
-                        <td class="p-3 text-xs max-w-xs truncate">${p.address || '-'}</td>
-                        <td class="p-3 text-xs">${p.client || '-'}</td>
-                        <td class="p-3 text-xs font-mono">${p.phone || '-'}</td>
-                        <td class="p-3 flex gap-1">
-                            <button onclick="sendWA(${p.id})" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">WA</button>
-                            <button onclick="editProject(${p.id})" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300">Edit</button>
-                            <button onclick="quickUpdate(${p.id}, 'Done')" class="text-xs bg-purple-600 text-white px-2 py-1 rounded">Selesai</button>
+                    <tr>
+                        <td class="font-mono text-yellow-400 font-bold">${p.date || '-'}</td>
+                        <td class="font-bold text-white">${p.name}</td>
+                        <td class="text-xs max-w-xs truncate text-slate-400">${p.address || '-'}</td>
+                        <td class="text-xs">${p.client || '-'}</td>
+                        <td class="text-xs font-mono text-cyan-400">${p.phone || '-'}</td>
+                        <td class="flex justify-end gap-2">
+                            <button onclick="sendWA(${p.id})" class="btn-metal bg-green-500/20 text-green-400 border border-green-500/30 text-[10px] px-3 py-1.5 inline-flex">WA</button>
+                            <button onclick="editProject(${p.id})" class="btn-metal btn-ghost text-[10px] px-3 py-1.5 inline-flex">EDIT</button>
+                            <button onclick="quickUpdate(${p.id}, 'Done')" class="btn-metal bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] px-3 py-1.5 inline-flex">DONE</button>
+                            <button onclick="deleteProject(${p.id})" class="btn-metal bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] px-3 py-1.5 inline-flex"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>`;
             });
@@ -558,16 +813,20 @@
 
         function renderTableDone(tbodyId, data) {
             const tbody = document.getElementById(tbodyId);
+            if(!tbody) return;
             tbody.innerHTML = '';
-            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">Belum ada selesai</td></tr>'; return; }
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500 italic">Belum ada riwayat demo selesai</td></tr>'; return; }
             data.forEach(p => {
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b">
-                        <td class="p-3 font-medium">${p.name}</td>
-                        <td class="p-3 text-xs">${p.type || '-'}</td>
-                        <td class="p-3 text-xs">${p.client || '-'}</td>
-                        <td class="p-3 text-xs text-gray-500">${p.date || '-'}</td>
-                        <td class="p-3"><button onclick="editProject(${p.id})" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300">Edit</button></td>
+                    <tr>
+                        <td class="font-bold text-white">${p.name}</td>
+                        <td class="text-xs text-slate-400">${p.type || '-'}</td>
+                        <td class="text-xs">${p.client || '-'}</td>
+                        <td class="text-xs text-green-400 font-mono">${p.date || '-'}</td>
+                        <td class="text-right flex justify-end gap-2">
+                            <button onclick="editProject(${p.id})" class="btn-metal btn-ghost text-[10px] px-3 py-1.5 inline-flex">LIHAT/EDIT</button>
+                            <button onclick="deleteProject(${p.id})" class="btn-metal bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] px-3 py-1.5 inline-flex"><i class="fa-solid fa-trash"></i></button>
+                        </td>
                     </tr>`;
             });
         }
@@ -610,16 +869,16 @@
             document.getElementById('inp-address').value = p.address || '';
             document.getElementById('inp-coords').value = p.coords || '';
 
-            document.getElementById('form-title').innerText = "Edit Data Proyek";
-            document.getElementById('btn-save').innerText = "Update Data";
+            document.getElementById('form-title').innerText = "EDIT DATA PROYEK";
+            document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Update Data Proyek';
             
             showPage('input');
         }
 
         function resetForm() {
             document.getElementById('inp-id').value = '';
-            document.getElementById('form-title').innerText = "Input Data Proyek";
-            document.getElementById('btn-save').innerText = "Simpan Data";
+            document.getElementById('form-title').innerText = "INPUT DATA PROYEK";
+            document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Proyek';
             document.querySelector('form').reset();
         }
 
@@ -627,7 +886,7 @@
             e.preventDefault();
             const id = document.getElementById('inp-id').value;
             
-            const projectData = {
+            const pData = {
                 name: document.getElementById('inp-name').value,
                 type: document.getElementById('inp-type').value,
                 client: document.getElementById('inp-client').value,
@@ -640,21 +899,20 @@
                 coords: document.getElementById('inp-coords').value
             };
 
-            let error;
-            if(id) {
-                const { error: updateError } = await _client.from('projects').update(projectData).eq('id', id);
-                error = updateError;
-            } else {
-                const { error: insertError } = await _client.from('projects').insert([projectData]);
-                error = insertError;
-            }
-
-            if(error) alert("Error: " + error.message);
-            else {
+            try {
+                if(id) {
+                    const { error } = await _client.from('projects').update(pData).eq('id', id);
+                    if (error) throw error;
+                } else {
+                    const { error } = await _client.from('projects').insert([pData]);
+                    if (error) throw error;
+                }
                 alert(id ? "Data Berhasil Diupdate!" : "Berhasil Disimpan!");
                 resetForm();
                 showPage('dashboard');
                 refreshAllData();
+            } catch (err) {
+                alert("Error: " + err.message);
             }
         }
 
@@ -664,113 +922,211 @@
             if(!error) refreshAllData();
         }
 
-        // --- LAPORAN & EXCEL (LOGIKA SEBELUMNYA: PDF TAMPILKAN DATA LEBIHAT DONE, TAPI STATISTIK DARI DONE) ---
-        
+        async function deleteProject(id) {
+            if(!confirm("⚠️ HAPUS DATA?\n\nData transaksi ini akan dihapus permanen dari Cloud & Lokal.\n\nLanjutkan?")) return;
+            try {
+                const { error } = await _client.from('projects').delete().eq('id', id);
+                if(error) throw error;
+                alert("Data Berhasil Dihapus!");
+                refreshAllData();
+            } catch (err) {
+                alert("Gagal menghapus data: " + err.message);
+            }
+        }
+
+        // --- SECRET MENU ---
+        let secretClickCount = 0;
+        function handleSecretClick() {
+            secretClickCount++;
+            if (secretClickCount === 5) {
+                const adminMenu = document.getElementById('menu-admin');
+                const secretArea = document.getElementById('secret-admin-area');
+                const placeholder = document.getElementById('admin-placeholder');
+                
+                if(adminMenu) adminMenu.classList.remove('hidden');
+                if(secretArea) secretArea.classList.remove('hidden');
+                if(placeholder) placeholder.classList.add('hidden');
+                
+                alert("🔓 MODE ADMIN AKTIF\n\nOpsi kontrol database sekarang tersedia di Admin Panel.");
+                secretClickCount = 0;
+            }
+        }
+
+        // --- LAPORAN ---
         function generateReport() {
             const month = document.getElementById('report-month').value;
             const year = document.getElementById('report-year').value;
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             
-            document.getElementById('report-period-display').innerText = `PERIODE: ${monthNames[parseInt(month)-1]} ${year}`;
-            document.getElementById('print-date').innerText = new Date().toLocaleDateString('id-ID');
-
-            // 1. Ambil data bulan ini
             const monthlyData = projectsData.filter(p => {
                 if(!p.date) return false;
                 const d = new Date(p.date);
                 return d.getFullYear() == year && (d.getMonth() + 1) == parseInt(month);
             });
 
-            // 2. Hitung Statistik HANYA DARI YANG SUDAH SELESAI (DONE)
             const doneData = monthlyData.filter(p => p.status === 'Done');
+            const dataToShow = doneData.length > 0 ? doneData : monthlyData;
 
-            // Update Tabel PDF dengan data DONE saja
-            const tbody = document.getElementById('report-table-body');
-            tbody.innerHTML = '';
-            
-            // Gunakan doneData untuk Tabel PDF agar tidak kosong
-            const dataToShow = doneData.length > 0 ? doneData : monthlyData; // Jika tidak ada yang Done, tampilkan semua (agar ada isinya)
-            
-            // Hitung Statistik Tetap HANYA DARI DONE
             const mandorSet = new Set();
             doneData.forEach(p => { if(p.mandor) mandorSet.add(p.mandor.trim()); });
-            document.getElementById('report-mandor').innerText = mandorSet.size;
-
+            
             const totalTukang = doneData.reduce((sum, p) => {
                 const count = parseInt(p.tukang);
                 return sum + (isNaN(count) ? 0 : count);
             }, 0);
-            document.getElementById('report-tukang').innerText = totalTukang;
 
-            document.getElementById('report-count').innerText = doneData.length;
-
-            // Render Tabel
+            let tableRows = '';
             if (dataToShow.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Tidak ada data selesai pada periode ini</td></tr>';
+                tableRows = '<tr><td colspan="7" style="padding:40px; text-align:center; color:#94a3b8;">Tidak ada data pada periode ini</td></tr>';
             } else {
                 dataToShow.forEach((p, index) => {
-                    tbody.innerHTML += `
+                    tableRows += `
                         <tr>
-                            <td class="border border-gray-300 p-2 text-center">${index + 1}</td>
-                            <td class="border border-gray-300 p-2">${p.date || '-'}</td>
-                            <td class="border border-gray-300 p-2 font-medium">${p.name}</td>
-                            <td class="border border-gray-300 p-2">${p.client || '-'}</td>
-                            <td class="border border-gray-300 p-2">${p.mandor || '-'}</td>
-                            <td class="border border-gray-300 p-2 text-center">${p.tukang || 0}</td>
-                            <td class="border border-gray-300 p-2 text-center">
-                                <span class="px-2 py-1 rounded text-xs font-bold ${p.status === 'Done' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${p.status || '-'}</span>
-                            </td>
+                            <td style="text-align:center;">${index + 1}</td>
+                            <td>${p.date || '-'}</td>
+                            <td style="font-weight:bold;">${p.name}</td>
+                            <td>${p.client || '-'}</td>
+                            <td>${p.mandor || '-'}</td>
+                            <td style="text-align:center;">${p.tukang || 0}</td>
+                            <td style="text-align:center; font-weight:bold; color:${p.status === 'Done' ? '#10b981' : '#f59e0b'}">${p.status || '-'}</td>
                         </tr>
                     `;
                 });
             }
+
+            const reportHTML = `
+                <div style="padding:20px; color:#1e293b;">
+                    <div style="text-align:center; border-bottom:3px solid #1e293b; padding-bottom:15px; margin-bottom:25px;">
+                        <h1 style="margin:0; font-size:24px; text-transform:uppercase; letter-spacing:2px; font-weight:800;">LAPORAN KEGIATAN TECHNICAL DEMO</h1>
+                        <p style="margin:5px 0 0 0; font-size:14px; font-weight:bold; color:#64748b;">PERIODE: ${monthNames[parseInt(month)-1].toUpperCase()} ${year}</p>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:15px; margin-bottom:30px;">
+                        <div style="border:1px solid #e2e8f0; padding:15px; border-radius:8px; text-align:center; background:#f8fafc;">
+                            <span style="font-size:24px; font-weight:800; display:block;">${doneData.length}</span>
+                            <span style="font-size:10px; color:#64748b; font-weight:bold; text-transform:uppercase;">Proyek Selesai</span>
+                        </div>
+                        <div style="border:1px solid #e2e8f0; padding:15px; border-radius:8px; text-align:center; background:#f8fafc;">
+                            <span style="font-size:24px; font-weight:800; display:block;">${mandorSet.size}</span>
+                            <span style="font-size:10px; color:#64748b; font-weight:bold; text-transform:uppercase;">Mandor Demo</span>
+                        </div>
+                        <div style="border:1px solid #e2e8f0; padding:15px; border-radius:8px; text-align:center; background:#f8fafc;">
+                            <span style="font-size:24px; font-weight:800; display:block;">${totalTukang}</span>
+                            <span style="font-size:10px; color:#64748b; font-weight:bold; text-transform:uppercase;">Tukang Demo</span>
+                        </div>
+                    </div>
+
+                    <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                        <thead>
+                            <tr style="background:#f1f5f9;">
+                                <th style="border:1px solid #cbd5e1; padding:10px; font-size:12px; width:40px;">NO</th>
+                                <th style="border:1px solid #cbd5e1; padding:10px; font-size:12px;">TANGGAL</th>
+                                <th style="border:1px solid #cbd5e1; padding:10px; font-size:12px;">NAMA PROYEK</th>
+                                <th style="border:1px solid #cbd5e1; padding:10px; font-size:12px;">KLIEN</th>
+                                <th style="border:1px solid #cbd5e1; padding:10px; font-size:12px;">MANDOR</th>
+                                <th style="border:1px solid #cbd5e1; padding:10px; font-size:12px; width:60px;">TUKANG</th>
+                                <th style="border:1px solid #cbd5e1; padding:10px; font-size:12px; width:80px;">STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size:12px;">${tableRows}</tbody>
+                    </table>
+                </div>
+            `;
+            document.getElementById('report-paper').innerHTML = reportHTML;
         }
 
         function exportToExcel() {
-            // Ekspor Excel: Ambil data bulan ini, tapi HANYA YANG DONE
             const month = document.getElementById('report-month').value;
             const year = document.getElementById('report-year').value;
-
-            const monthlyData = projectsData.filter(p => {
+            const dataToExport = projectsData.filter(p => {
                 if(!p.date) return false;
                 const d = new Date(p.date);
-                return d.getFullYear() == year && (d.getMonth() + 1) == parseInt(month);
+                return d.getFullYear() == year && (d.getMonth() + 1) == parseInt(month) && p.status === 'Done';
             });
 
-            // Filter HANYA YANG DONE
-            const dataToExport = monthlyData.filter(p => p.status === 'Done');
-
-            if(dataToExport.length === 0) { 
-                alert("Tidak ada data demo selesai (Status Done) pada periode ini untuk diekspor.\n\nPastikan: \n1. Status proyek sudah 'Done'.\n2. Bulan & Tahun yang dipilih sesuai."); 
-                return; 
-            }
+            if(dataToExport.length === 0) { alert("Tidak ada data selesai (Status Done) pada periode ini."); return; }
 
             const excelData = dataToExport.map(p => ({
-                "Nama Proyek": p.name,
-                "Jenis": p.type,
-                "Klien": p.client,
-                "No HP": p.phone,
-                "Mandor": p.mandor,
-                "Jml Tukang": p.tukang,
-                "Tanggal Selesai": p.date,
-                "Status": p.status,
-                "Alamat": p.address,
-                "Koordinat": p.coords
+                "Proyek": p.name, "Jenis": p.type, "Klien": p.client, "WhatsApp": p.phone,
+                "Mandor": p.mandor, "Tukang": p.tukang, "Tanggal": p.date, "Status": p.status, "Alamat": p.address
             }));
 
             const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Laporan Demo Selesai");
-            
-            const filename = `Laporan_Demo_Selesai_${new Date().toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(wb, filename);
+            XLSX.utils.book_append_sheet(wb, ws, "Laporan Done");
+            XLSX.writeFile(wb, `Laporan_Demo_Done_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // 5. CALENDAR & MAP
+        function printProfessionalPDF() {
+            const content = document.getElementById('report-paper').innerHTML;
+            const printHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Laporan_Technical_Demo_Broco</title>
+                    <style>
+                        @page { size: A4 portrait; margin: 0; }
+                        body { background: white; margin: 0; padding: 0; font-family: sans-serif; }
+                        .print-container { width: 210mm; min-height: 297mm; padding: 20mm; margin: 0 auto; position: relative; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+                        th { background: #eee !important; -webkit-print-color-adjust: exact; }
+                        .sig-area { display: flex; justify-content: space-between; margin-top: 60px; page-break-inside: avoid; }
+                        .sig-box { width: 220px; text-align: center; }
+                        .sig-title { font-weight: bold; margin-bottom: 70px; }
+                        .sig-name { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-container">
+                        ${content}
+                        <div class="sig-area">
+                            <div class="sig-box"><p class="sig-title">Disusun Oleh,</p><p class="sig-name">( Technical Support )</p></div>
+                            <div class="sig-box"><p class="sig-title">Diketahui Oleh,</p><p class="sig-name">( Project Manager )</p></div>
+                        </div>
+                    </div>
+                    <script>window.onload = function() { window.print(); };<\/script>
+                </body>
+                </html>
+            `;
+            const blob = new Blob([printHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        function downloadReportDB() {
+            const dataStr = JSON.stringify(projectsData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `database_tdcc_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function clearReportDB() {
+            if(!confirm("⚠️ PERINGATAN! Anda akan menghapus SELURUH database proyek.")) return;
+            if(!confirm("Tindakan ini permanen. Lanjutkan?")) return;
+            try {
+                const { error } = await _client.from('projects').delete().neq('id', 0);
+                if(error) throw error;
+                alert("Database Berhasil Dibersihkan!");
+                refreshAllData();
+                showPage('dashboard');
+            } catch (err) { alert("Gagal: " + err.message); }
+        }
+
+        // --- CALENDAR & MAP ---
         function initCalendar() {
             setTimeout(() => {
                 if(!calendar) {
-                    calendar = new FullCalendar.Calendar(document.getElementById('calendar'), { initialView: 'dayGridMonth', headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }, locale: 'id' });
+                    calendar = new FullCalendar.Calendar(document.getElementById('calendar'), { 
+                        initialView: 'dayGridMonth', 
+                        locale: 'id',
+                        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }
+                    });
                     calendar.render();
                 }
                 refreshAllData();
@@ -781,11 +1137,19 @@
         function initViewMap() {
             setTimeout(() => {
                 if(!viewMap) {
+                    // Gunakan Esri World Street Map (High Contrast & Professional)
                     viewMap = L.map('map-view').setView([-6.2088, 106.8456], 10);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(viewMap);
+                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
+                        maxZoom: 18
+                    }).addTo(viewMap);
                 }
-                viewMap.eachLayer(l => { if(!!l.toGeoJSON) viewMap.removeLayer(l); });
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(viewMap);
+                
+                // Bersihkan marker lama
+                viewMap.eachLayer(l => { 
+                    if(l instanceof L.Marker) viewMap.removeLayer(l); 
+                });
+
                 let bounds = [];
                 projectsData.forEach(p => {
                     if(p.coords) {
@@ -794,15 +1158,35 @@
                             const lat = parseFloat(parts[0].trim());
                             const lng = parseFloat(parts[1].trim());
                             if(!isNaN(lat) && !isNaN(lng)) {
-                                L.marker([lat, lng]).addTo(viewMap).bindPopup(`<b>${p.name}</b><br>${p.status}`);
+                                L.marker([lat, lng]).addTo(viewMap).bindPopup(`
+                                    <div style="color:#0f172a; font-family: 'Inter', sans-serif; min-width: 180px; padding: 5px;">
+                                        <b style="color:#0369a1; font-size: 15px; border-bottom: 1px solid #e2e8f0; display: block; padding-bottom: 5px; margin-bottom: 8px;">${p.name}</b>
+                                        <div style="font-size: 12px; line-height: 1.6;">
+                                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                                <span style="color:#64748b;">Status:</span>
+                                                <span style="font-weight:800; color:#0f172a;">${p.status}</span>
+                                            </div>
+                                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                                <span style="color:#64748b;">Klien:</span>
+                                                <span style="font-weight:600;">${p.client}</span>
+                                            </div>
+                                            <p style="margin-top:8px; font-size:11px; color:#94a3b8; font-style:italic; border-top:1px dashed #eee; pt-2;">
+                                                ${p.address || 'Alamat tidak tersedia'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `);
                                 bounds.push([lat, lng]);
                             }
                         }
                     }
                 });
-                if(bounds.length > 0) viewMap.fitBounds(bounds);
+
                 viewMap.invalidateSize();
-            }, 100);
+                if(bounds.length > 0) {
+                    viewMap.fitBounds(bounds, { padding: [50, 50] });
+                }
+            }, 300);
         }
 
         document.addEventListener('DOMContentLoaded', refreshAllData);
